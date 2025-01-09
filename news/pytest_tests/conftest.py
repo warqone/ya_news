@@ -46,6 +46,13 @@ def reader():
     return User.objects.create(username='Читатель')
 
 
+@pytest.fixture  # Фикстура авторизованного читателя.
+def auth_reader(reader):
+    client = Client()
+    client.force_login(reader)
+    return client
+
+
 @pytest.fixture  # Фикстура создания комментария к записи news().
 def comment(news, author):
     return Comment.objects.create(
@@ -53,6 +60,21 @@ def comment(news, author):
         author=author,
         text='Текст комментария',
     )
+
+
+@pytest.fixture  # Фикстура URL для редактирования комментария.
+def edit_comment_url(comment):
+    return reverse('news:edit', args=(comment.id,))
+
+
+@pytest.fixture  # Фикстура нового текста для редактирования комментария.
+def new_comment_text():
+    return {'text': 'Новый текст'}
+
+
+@pytest.fixture  # Фикстура URL для удаления комментария.
+def delete_comment_url(comment):
+    return reverse('news:delete', args=(comment.id,))
 
 
 @pytest.fixture  # Фикстура для создания 11 новостей.
