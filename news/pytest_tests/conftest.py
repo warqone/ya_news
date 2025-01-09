@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from django.test.client import Client
 
 from news.models import Comment, News
@@ -23,15 +24,22 @@ def pk_for_args(news):
     return (news.pk,)
 
 
+@pytest.fixture  # Фикстура для создания URL адреса новости news.
+def news_url(pk_for_args):
+    return reverse('news:detail', args=pk_for_args)
+
+
 @pytest.fixture  # Фикстура для создания автора коммента.
 def author():
     return User.objects.create(username='Лев Толстой')
+
 
 @pytest.fixture
 def auth_author(author):
     client = Client()
     client.force_login(author)
     return client
+
 
 @pytest.fixture  # Фикстура для создания пользователя.
 def reader():
@@ -70,3 +78,8 @@ def all_comments(news, author):
         )
         for index in range(10)
     ]
+
+
+@pytest.fixture
+def comment_form_data():
+    return {'text': 'Комментарий'}

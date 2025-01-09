@@ -1,8 +1,6 @@
 import pytest
-from http import HTTPStatus
 from django.urls import reverse
 from django.conf import settings
-from pytest_django.asserts import assertRedirects
 
 HOME_URL = reverse('news:home')
 
@@ -29,10 +27,9 @@ def test_news_order(client, all_news):
 
 
 @pytest.mark.django_db
-def test_comments_order(client, all_comments, news, pk_for_args):
+def test_comments_order(client, all_comments, news, news_url):
     """Проверка что комментарии отсортированы от старых к новым."""
-    url = reverse('news:detail', args=pk_for_args)
-    response = client.get(url)
+    response = client.get(news_url)
     assert 'news' in response.context
     news = response.context['news']
     all_comments = news.comment_set.all()
@@ -47,24 +44,14 @@ def test_comments_order(client, all_comments, news, pk_for_args):
     ('not_auth_user', False),
 ])
 def test_form_availability(
-    client, user, expected_bool, author, reader, pk_for_args
+    client, user, expected_bool, author, reader, news_url
 ):
-    url = reverse('news:detail', args=pk_for_args)
-    user_instance = author if user == 'author' else reader
-    if user == 'author':
+    """Проверка что форма доступна только авторизованному клиенту,
+    а неавторизованному - недоступна.
+    """
+    user_instance = author if user == 'auth_user' else reader
+    if user == 'auth_user':
         client.force_login(user_instance)
-    response = client.get(url)
+    response = client.get(news_url)
     status = 'form' in response.context
     assert status == expected_bool
-
-    # def test_anonymous_client_has_no_form(self):
-    #     response = self.client.get(self.detail_url)
-    #     self.assertNotIn('form', response.context)
-
-    # def test_authorized_client_has_form(self):
-    #     # Авторизуем клиент при помощи ранее созданного пользователя.
-    #     self.client.force_login(self.author)
-    #     response = self.client.get(self.detail_url)
-    #     self.assertIn('form', response.context)
-    #     # Проверим, что объект формы соответствует нужному классу формы.
-    #     self.assertIsInstance(response.context['form'], CommentForm)
