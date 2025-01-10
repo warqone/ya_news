@@ -1,13 +1,13 @@
 import pytest
-from django.urls import reverse
 from django.conf import settings
+from django.urls import reverse
 
 HOME_URL = reverse('news:home')
 
 
 @pytest.mark.django_db
 def test_news_count(client, all_news):
-    """Проверка что новостей на главной странице не больше заданного."""
+    """Новостей на главной странице не больше заданного."""
     url = HOME_URL
     response = client.get(url)
     object_list = response.context['object_list']
@@ -17,7 +17,7 @@ def test_news_count(client, all_news):
 
 @pytest.mark.django_db
 def test_news_order(client, all_news):
-    """Проверка что новости отсортированы от свежих к старым."""
+    """Новости отсортированы от свежих к старым."""
     url = HOME_URL
     response = client.get(url)
     object_list = response.context['object_list']
@@ -28,9 +28,8 @@ def test_news_order(client, all_news):
 
 @pytest.mark.django_db
 def test_comments_order(client, all_comments, news, news_url):
-    """Проверка что комментарии отсортированы от старых к новым."""
+    """Комментарии отсортированы от старых к новым."""
     response = client.get(news_url)
-    assert 'news' in response.context
     news = response.context['news']
     all_comments = news.comment_set.all()
     all_timestamps = [comment.created for comment in all_comments]
@@ -39,19 +38,14 @@ def test_comments_order(client, all_comments, news, news_url):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('user, expected_bool', [
-    ('auth_user', True),
-    ('not_auth_user', False),
-])
-def test_form_availability(
-    client, user, expected_bool, author, reader, news_url
-):
-    """Проверка что форма доступна только авторизованному клиенту,
-    а неавторизованному - недоступна.
-    """
-    user_instance = author if user == 'auth_user' else reader
-    if user == 'auth_user':
-        client.force_login(user_instance)
+def test_anonymous_client_has_no_form(client, news_url):
+    """У анонимного пользователя отсутствует форма комментария."""
     response = client.get(news_url)
-    status = 'form' in response.context
-    assert status == expected_bool
+    assert 'form' not in response.context
+
+
+@pytest.mark.django_db
+def test_authorized_client_has_form(auth_author, news_url):
+    """У авторизованного пользователя присутствует форма комментария."""
+    response = auth_author.get(news_url)
+    assert 'form' in response.context

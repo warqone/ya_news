@@ -1,17 +1,20 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from django.test.client import Client
+from django.urls import reverse
+from django.utils import timezone
 
 from news.models import Comment, News
 
 User = get_user_model()
 
+pytestmark = pytest.mark.django_db
 
-@pytest.fixture  # Фикстура создания новости.
+
+@pytest.fixture
 def news():
     return News.objects.create(
         title='Заголовок',
@@ -19,17 +22,17 @@ def news():
     )
 
 
-@pytest.fixture  # Фикстура для получения id новости.
+@pytest.fixture
 def pk_for_args(news):
     return (news.pk,)
 
 
-@pytest.fixture  # Фикстура для создания URL адреса новости news.
+@pytest.fixture
 def news_url(pk_for_args):
     return reverse('news:detail', args=pk_for_args)
 
 
-@pytest.fixture  # Фикстура для создания автора коммента.
+@pytest.fixture
 def author():
     return User.objects.create(username='Лев Толстой')
 
@@ -41,19 +44,19 @@ def auth_author(author):
     return client
 
 
-@pytest.fixture  # Фикстура для создания пользователя.
+@pytest.fixture
 def reader():
     return User.objects.create(username='Читатель')
 
 
-@pytest.fixture  # Фикстура авторизованного читателя.
+@pytest.fixture
 def auth_reader(reader):
     client = Client()
     client.force_login(reader)
     return client
 
 
-@pytest.fixture  # Фикстура создания комментария к записи news().
+@pytest.fixture
 def comment(news, author):
     return Comment.objects.create(
         news=news,
@@ -62,44 +65,46 @@ def comment(news, author):
     )
 
 
-@pytest.fixture  # Фикстура URL для редактирования комментария.
+@pytest.fixture
 def edit_comment_url(comment):
     return reverse('news:edit', args=(comment.id,))
 
 
-@pytest.fixture  # Фикстура нового текста для редактирования комментария.
+@pytest.fixture
 def new_comment_text():
     return {'text': 'Новый текст'}
 
 
-@pytest.fixture  # Фикстура URL для удаления комментария.
+@pytest.fixture
 def delete_comment_url(comment):
     return reverse('news:delete', args=(comment.id,))
 
 
-@pytest.fixture  # Фикстура для создания 11 новостей.
+@pytest.fixture
 def all_news():
-    return [
-        News.objects.create(
+    news = [
+        News(
             title=f'Новость {index}',
             text='Просто текст.',
-            date=datetime.today() - timedelta(days=index)
+            date=timezone.now() - timedelta(days=index)
         )
         for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     ]
+    return News.objects.bulk_create(news)
 
 
-@pytest.fixture  # Фикстура для создания 10 комментариев.
+@pytest.fixture
 def all_comments(news, author):
-    return [
-        Comment.objects.create(
+    comments = [
+        Comment(
             news=news,
             text='qq',
             author=author,
-            created=datetime.now() + timedelta(days=index)
+            created=timezone.now() + timedelta(days=index)
         )
         for index in range(10)
     ]
+    return Comment.objects.bulk_create(comments)
 
 
 @pytest.fixture
