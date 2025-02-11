@@ -2,16 +2,18 @@ from datetime import timedelta
 
 import pytest
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.test.client import Client
 from django.urls import reverse
 from django.utils import timezone
 
 from news.models import Comment, News
 
-User = get_user_model()
-
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture
+def home_url():
+    return reverse('news:home')
 
 
 @pytest.fixture
@@ -28,13 +30,13 @@ def pk_for_args(news):
 
 
 @pytest.fixture
-def news_url(pk_for_args):
-    return reverse('news:detail', args=pk_for_args)
+def news_url(news):
+    return reverse('news:detail', args=(news.pk,))
 
 
 @pytest.fixture
-def author():
-    return User.objects.create(username='Лев Толстой')
+def author(django_user_model):
+    return django_user_model.objects.create(username='Лев Толстой')
 
 
 @pytest.fixture
@@ -45,8 +47,8 @@ def auth_author(author):
 
 
 @pytest.fixture
-def reader():
-    return User.objects.create(username='Читатель')
+def reader(django_user_model):
+    return django_user_model.objects.create(username='Читатель')
 
 
 @pytest.fixture
@@ -90,7 +92,7 @@ def all_news():
         )
         for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     ]
-    return News.objects.bulk_create(news)
+    News.objects.bulk_create(news)
 
 
 @pytest.fixture
@@ -104,7 +106,7 @@ def all_comments(news, author):
         )
         for index in range(10)
     ]
-    return Comment.objects.bulk_create(comments)
+    Comment.objects.bulk_create(comments)
 
 
 @pytest.fixture

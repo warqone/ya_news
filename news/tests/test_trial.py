@@ -1,6 +1,7 @@
+from unittest import skip
+
 from django.test import TestCase
 
-from unittest import skip
 # Импортируем модель, чтобы работать с ней в тестах.
 from news.models import News
 
