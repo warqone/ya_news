@@ -1,52 +1,46 @@
 from http import HTTPStatus
 
 import pytest
-from django.urls import reverse
 from pytest_django.asserts import assertRedirects
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('name, args', [
-    ('news:home', None),
-    ('news:detail', pytest.lazy_fixture('pk_for_args')),
-    ('users:login', None),
-    ('users:logout', None),
-    ('users:signup', None),
+@pytest.mark.parametrize('urls', [
+    (pytest.lazy_fixture('home_url')),
+    (pytest.lazy_fixture('news_detail_url')),
+    (pytest.lazy_fixture('login_url')),
+    (pytest.lazy_fixture('logout_url')),
+    (pytest.lazy_fixture('signup_url')),
 ])
-def test_pages_availability(client, name, args):
-    url = reverse(name, args=args)
-    response = client.get(url)
+def test_pages_availability(client, urls):
+    response = client.get(urls)
     assert response.status_code == HTTPStatus.OK
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('user, expected_status', [
-    (pytest.lazy_fixture('author'), HTTPStatus.OK),
-    (pytest.lazy_fixture('reader'), HTTPStatus.NOT_FOUND),
+    (pytest.lazy_fixture('auth_author'), HTTPStatus.OK),
+    (pytest.lazy_fixture('auth_reader'), HTTPStatus.NOT_FOUND),
 ])
 @pytest.mark.parametrize(
-    'name', [
-        ('news:edit'),
-        ('news:delete'),
+    'url', [
+        (pytest.lazy_fixture('edit_comment_url')),
+        (pytest.lazy_fixture('delete_comment_url')),
     ]
 )
 def test_availability_for_comment_edit_and_delete(
-    client, user, expected_status, name, comment
+    user, expected_status, url,
 ):
-    client.force_login(user)
-    url = reverse(name, args=(comment.pk,))
-    response = client.get(url)
+    response = user.get(url)
     assert response.status_code == expected_status
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('name', [
-    'news:edit',
-    'news:delete',
+@pytest.mark.parametrize('url', [
+    (pytest.lazy_fixture('edit_comment_url')),
+    (pytest.lazy_fixture('delete_comment_url')),
 ])
-def test_redirect_for_anonymous_client(client, name, comment):
-    login_url = reverse('users:login')
-    url = reverse(name, args=(comment.id,))
+def test_redirect_for_anonymous_client(client, url, login_url):
     redirect_url = f'{login_url}?next={url}'
     response = client.get(url)
     assertRedirects(response, redirect_url)

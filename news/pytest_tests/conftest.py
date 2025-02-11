@@ -12,6 +12,21 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
+def login_url():
+    return reverse('users:login')
+
+
+@pytest.fixture
+def logout_url():
+    return reverse('users:logout')
+
+
+@pytest.fixture
+def signup_url():
+    return reverse('users:signup')
+
+
+@pytest.fixture
 def home_url():
     return reverse('news:home')
 
@@ -25,12 +40,7 @@ def news():
 
 
 @pytest.fixture
-def pk_for_args(news):
-    return (news.pk,)
-
-
-@pytest.fixture
-def news_url(news):
+def news_detail_url(news):
     return reverse('news:detail', args=(news.pk,))
 
 
